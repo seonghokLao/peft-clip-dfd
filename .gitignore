@@ -1,0 +1,12 @@
+__pycache__
+.vscode
+
+/config
+/datasets
+/outputs
+/runs
+/weights
+
+x.py
+y.py
+z.py
