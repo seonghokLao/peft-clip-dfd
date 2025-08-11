@@ -9,8 +9,6 @@ from src.utils import logger
 
 from .config import Loss as LossConfig
 
-import numpy as np
-
 
 @dataclass
 class LossInputs:
@@ -33,9 +31,6 @@ class Loss(nn.Module):
         super().__init__()
         self.config = loss_config
 
-        centers = np.load("cluster_labels.npz")
-        self.cluster_centers = torch.from_numpy(centers["centers"]).float()
-
     def forward(
         self,
         inputs: LossInputs,
@@ -56,8 +51,6 @@ class Loss(nn.Module):
             # embeddings = F.normalize(inputs.embeddings, p=2, dim=1)
             embeddings = inputs.embeddings
 
-            embeddings = F.normalize(embeddings, p=2, dim=1)
-
             # check that embeddings are normalized
             if not torch.allclose(
                 embeddings.norm(p=2, dim=1), torch.ones(embeddings.size(0), device=embeddings.device)
@@ -69,26 +62,6 @@ class Loss(nn.Module):
                     L = self.config.alignment_labels * alignment(embeddings, inputs.labels)
                     loss_outputs.alignment_labels = L.item()
                     loss_outputs.total += L
-                
-                # Default: use binary labels (0=real, 1=fake)
-                supcon_labels = inputs.labels
-
-                with torch.no_grad():
-                    feats = embeddings  # already L2-normalized above
-                    fake_mask = supcon_labels == 1
-                    if fake_mask.any():
-                        centers = F.normalize(self.cluster_centers.to(feats.device), p=2, dim=1)
-                        fake_feats = feats[fake_mask]                       # (Nf, D)
-                        dists = torch.cdist(fake_feats, centers)            # (Nf, K)
-                        nearest = dists.argmin(dim=1) + 1                   # 1..K
-                        supcon_labels = supcon_labels.clone()
-                        supcon_labels[fake_mask] = nearest
-
-
-                Lc = self.supcon_loss(embeddings, supcon_labels,
-                                        temperature=getattr(self.config, "supcon_temperature", 0.07))
-                loss_outputs.total += Lc
-
 
             if self.config.uniformity:
                 L = self.config.uniformity * uniformity(embeddings)
@@ -106,43 +79,3 @@ class Loss(nn.Module):
 
     def __call__(self, inputs: LossInputs) -> LossOutputs:
         return super().__call__(inputs)
-
-    def supcon_loss(features, labels, temperature=0.07):
-        """
-        Supervised Contrastive Loss
-        features: [batch, dim] (should already be normalized)
-        labels: [batch] (cluster labels or normal labels)
-        """
-        device = features.device
-        labels = labels.contiguous().view(-1, 1)
-        mask = torch.eq(labels, labels.T).float().to(device)
-
-
-        anchor_dot_contrast = torch.div(
-            torch.matmul(features, features.T),
-            temperature
-        )
-
-
-        # For numerical stability
-        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
-        logits = anchor_dot_contrast - logits_max.detach()
-
-
-        # Mask-out self-contrast cases
-        logits_mask = torch.ones_like(mask) - torch.eye(mask.shape[0]).to(device)
-        mask = mask * logits_mask
-
-
-        # Compute log_prob
-        exp_logits = torch.exp(logits) * logits_mask
-        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
-
-
-        # Mean log-likelihood for positive pairs
-        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
-
-
-        # Loss
-        loss = -mean_log_prob_pos.mean()
-        return loss

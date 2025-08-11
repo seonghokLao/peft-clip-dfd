@@ -145,20 +145,6 @@ class DeepfakeDetectionModel(pl.LightningModule):
         if verbose:
             self.print_trainable_parameters()
 
-        blob = np.load("cluster_labels.npz", allow_pickle=True)
-        paths = blob["paths"]
-        clabs = blob["cluster_labels"]
-
-
-        # Normalize to python strings
-        if paths.dtype.kind in ("S", "O"):
-            paths = np.array([p.decode("utf-8") if isinstance(p, (bytes, np.bytes_)) else str(p) for p in paths])
-
-
-        assert len(paths) == len(clabs), f"paths ({len(paths)}) and cluster_labels ({len(clabs)}) length mismatch"
-        self.cluster_labels_map = dict(zip(paths.tolist(), clabs.tolist()))
-
-
     def _init_metrics(self):
         self.train_step_outputs = OutputsForMetrics()
         self.val_step_outputs = OutputsForMetrics()
@@ -282,12 +268,7 @@ class DeepfakeDetectionModel(pl.LightningModule):
         return outputs.logits_labels.softmax(1)
 
     def get_batch(self, batch: dict) -> Batch:
-        b = Batch.from_dict(batch)
-        new_labels = []
-        for p in b.paths:
-            new_labels.append(self.cluster_labels_map[p])
-        b.labels = torch.tensor(new_labels, device=b.labels.device, dtype=b.labels.dtype)
-        return b
+        return Batch.from_dict(batch)
 
     def slerp_feature_augmentation(self, batch: Batch, features: torch.Tensor):
         # Perform slerp on features, each class independently, vectorized

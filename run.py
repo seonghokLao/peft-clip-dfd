@@ -125,11 +125,11 @@ def get_train_config() -> Config:
     #     "config/datasets/FF/test/NT.txt",
     #     "config/datasets/FF/test/real.txt",
     # ]
-    config.val_files = [
-        "config/datasets/CDFv2/test/Celeb-synthesis.txt",
-        "config/datasets/CDFv2/test/Celeb-real.txt",
-        "config/datasets/CDFv2/test/YouTube-real.txt",
-    ]
+    # config.val_files = [
+    #     "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+    #     "config/datasets/CDFv2/test/Celeb-real.txt",
+    #     "config/datasets/CDFv2/test/YouTube-real.txt",
+    # ]
 
     # config.tst_files = {
     #     "CDF": [
@@ -146,36 +146,36 @@ def get_train_config() -> Config:
         "config/datasets/FF/train/NT.txt",
         "config/datasets/FF/train/real.txt",
     ]
-    # config.val_files = [
-    #     "config/datasets/FF/val/DF.txt",
-    #     "config/datasets/FF/val/F2F.txt",
-    #     "config/datasets/FF/val/FS.txt",
-    #     "config/datasets/FF/val/NT.txt",
-    #     "config/datasets/FF/val/real.txt",
-    # ]
+    config.val_files = [
+        "config/datasets/FF/val/DF.txt",
+        "config/datasets/FF/val/F2F.txt",
+        "config/datasets/FF/val/FS.txt",
+        "config/datasets/FF/val/NT.txt",
+        "config/datasets/FF/val/real.txt",
+    ]
 
-    # config.tst_files = {
-    #     "FF": [
-    #         "config/datasets/FF/test/DF.txt",
-    #         "config/datasets/FF/test/F2F.txt",
-    #         "config/datasets/FF/test/FS.txt",
-    #         "config/datasets/FF/test/NT.txt",
-    #         "config/datasets/FF/test/real.txt",
-    #     ]
-    # }
     config.tst_files = {
-        # "DFD": [
-        #     "config/datasets/FF/test/DF.txt",
-        #     "config/datasets/FF/test/F2F.txt",
-        #     "config/datasets/FF/test/FS.txt",
-        #     "config/datasets/FF/test/NT.txt",
-        #     "config/datasets/FF/test/real.txt",
-        # ],
-        "CDF": [
-            "config/datasets/CDFv2/test/Celeb-real.txt",
-            "config/datasets/CDFv2/test/Celeb-synthesis.txt",
-            "config/datasets/CDFv2/test/YouTube-real.txt"
-        ],
+        "FF": [
+            "config/datasets/FF/test/DF.txt",
+            "config/datasets/FF/test/F2F.txt",
+            "config/datasets/FF/test/FS.txt",
+            "config/datasets/FF/test/NT.txt",
+            "config/datasets/FF/test/real.txt",
+        ]
+    }
+    # config.tst_files = {
+    #     # "DFD": [
+    #     #     "config/datasets/FF/test/DF.txt",
+    #     #     "config/datasets/FF/test/F2F.txt",
+    #     #     "config/datasets/FF/test/FS.txt",
+    #     #     "config/datasets/FF/test/NT.txt",
+    #     #     "config/datasets/FF/test/real.txt",
+    #     # ],
+    #     "CDF": [
+    #         "config/datasets/CDFv2/test/Celeb-real.txt",
+    #         "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+    #         "config/datasets/CDFv2/test/YouTube-real.txt"
+    #     ],
         # "DFDC": [
         #     "config/datasets/DFDC/test/fake.txt",
         #     "config/datasets/DFDC/test/real.txt",
@@ -194,7 +194,7 @@ def get_train_config() -> Config:
         #     "config/datasets/FF/test/NT.txt",
         #     "config/datasets/FF/test/real.txt",
         # ]
-    }
+    # }
 
     # config.cluster_labels_path = "cluster_labels.npz"
 
