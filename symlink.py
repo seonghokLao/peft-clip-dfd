@@ -1,15 +1,19 @@
 import os
 import json
 from pathlib import Path
-import shutil
 
 
 DATA_ROOT = Path("/home/laoseonghok/github/DeepfakeBench/datasets/rgb/FaceForensics++")
 OUT_ROOT = Path("datasets/FF")
 
 
-# Map each manipulation method to its "fake" label
-MANIP_METHODS = ["Deepfakes", "Face2Face", "FaceSwap", "NeuralTextures"]
+# Mapping of method name to label directory
+METHOD_MAP = {
+    "Deepfakes": "DF",
+    "Face2Face": "F2F",
+    "FaceSwap": "FS",
+    "NeuralTextures": "NT"
+}
 REAL_SOURCE = "youtube"
 
 
@@ -20,40 +24,38 @@ SPLITS = {
 }
 
 
-def symlink_video_frames(source_dir, dest_dir):
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    for frame_path in sorted(source_dir.glob("*.png")):
-        dst = dest_dir / frame_path.name
-        if not dst.exists():
-            os.symlink(frame_path.resolve(), dst)
+def symlink_frames(src_dir, dst_dir):
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    for frame in sorted(src_dir.glob("*.png")):
+        link = dst_dir / frame.name
+        if not link.exists():
+            os.symlink(frame.resolve(), link)
 
 
-def process_split(split_name, split_file):
-    with open(split_file, "r") as f:
+def process_split(json_file):
+    with open(json_file, "r") as f:
         pairs = json.load(f)
 
 
-    for source_id, target_id in pairs:
-        fake_id = f"{source_id}_{target_id}"
+    for src_id, tgt_id in pairs:
+        fake_id = f"{src_id}_{tgt_id}"
 
 
-        # Process fakes for each method
-        for method in MANIP_METHODS:
-            src_path = DATA_ROOT / f"manipulated_sequences/{method}/c23/frames/{fake_id}"
-            dst_path = OUT_ROOT / method / fake_id
-            if src_path.exists():
-                symlink_video_frames(src_path, dst_path)
+        for method_name, short_label in METHOD_MAP.items():
+            src = DATA_ROOT / f"manipulated_sequences/{method_name}/c23/frames/{fake_id}"
+            dst = OUT_ROOT / short_label / fake_id
+            if src.exists():
+                symlink_frames(src, dst)
 
 
-        # Process reals
-        for real_id in [source_id, target_id]:
-            src_path = DATA_ROOT / f"original_sequences/{REAL_SOURCE}/c23/frames/{real_id}"
-            dst_path = OUT_ROOT / "real" / real_id
-            if src_path.exists():
-                symlink_video_frames(src_path, dst_path)
+        for real_id in [src_id, tgt_id]:
+            src = DATA_ROOT / f"original_sequences/{REAL_SOURCE}/c23/frames/{real_id}"
+            dst = OUT_ROOT / "real" / real_id
+            if src.exists():
+                symlink_frames(src, dst)
 
 
-# Run for all splits
-for split_name, json_file in SPLITS.items():
-    process_split(split_name, json_file)
+# Run all splits (only structure depends on IDs)
+for json_file in SPLITS.values():
+    process_split(json_file)
 

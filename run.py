@@ -105,7 +105,8 @@ def get_train_config() -> Config:
     config.loss.ce_labels = 1.0
     config.slerp_feature_augmentation = True
 
-    config.batch_size = config.mini_batch_size = 128
+    # config.batch_size = config.mini_batch_size = 128
+    config.batch_size = config.mini_batch_size = 64
     config.lr_scheduler = "cosine"
     config.lr = 8e-5
     config.min_lr = 5e-5
@@ -117,26 +118,85 @@ def get_train_config() -> Config:
     config.limit_val_batches = limit_val_files // config.mini_batch_size
 
     config.binary_labels = True
-    config.trn_files = [
-        "config/datasets/FF/test/DF.txt",
-        "config/datasets/FF/test/F2F.txt",
-        "config/datasets/FF/test/FS.txt",
-        "config/datasets/FF/test/NT.txt",
-        "config/datasets/FF/test/real.txt",
-    ]
+    # config.trn_files = [
+    #     "config/datasets/FF/test/DF.txt",
+    #     "config/datasets/FF/test/F2F.txt",
+    #     "config/datasets/FF/test/FS.txt",
+    #     "config/datasets/FF/test/NT.txt",
+    #     "config/datasets/FF/test/real.txt",
+    # ]
     config.val_files = [
         "config/datasets/CDFv2/test/Celeb-synthesis.txt",
         "config/datasets/CDFv2/test/Celeb-real.txt",
         "config/datasets/CDFv2/test/YouTube-real.txt",
     ]
 
+    # config.tst_files = {
+    #     "CDF": [
+    #         "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+    #         "config/datasets/CDFv2/test/Celeb-real.txt",
+    #         "config/datasets/CDFv2/test/YouTube-real.txt",
+    #     ]
+    # }
+
+    config.trn_files = [
+        "config/datasets/FF/train/DF.txt",
+        "config/datasets/FF/train/F2F.txt",
+        "config/datasets/FF/train/FS.txt",
+        "config/datasets/FF/train/NT.txt",
+        "config/datasets/FF/train/real.txt",
+    ]
+    # config.val_files = [
+    #     "config/datasets/FF/val/DF.txt",
+    #     "config/datasets/FF/val/F2F.txt",
+    #     "config/datasets/FF/val/FS.txt",
+    #     "config/datasets/FF/val/NT.txt",
+    #     "config/datasets/FF/val/real.txt",
+    # ]
+
+    # config.tst_files = {
+    #     "FF": [
+    #         "config/datasets/FF/test/DF.txt",
+    #         "config/datasets/FF/test/F2F.txt",
+    #         "config/datasets/FF/test/FS.txt",
+    #         "config/datasets/FF/test/NT.txt",
+    #         "config/datasets/FF/test/real.txt",
+    #     ]
+    # }
     config.tst_files = {
+        # "DFD": [
+        #     "config/datasets/FF/test/DF.txt",
+        #     "config/datasets/FF/test/F2F.txt",
+        #     "config/datasets/FF/test/FS.txt",
+        #     "config/datasets/FF/test/NT.txt",
+        #     "config/datasets/FF/test/real.txt",
+        # ],
         "CDF": [
-            "config/datasets/CDFv2/test/Celeb-synthesis.txt",
             "config/datasets/CDFv2/test/Celeb-real.txt",
-            "config/datasets/CDFv2/test/YouTube-real.txt",
-        ]
+            "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+            "config/datasets/CDFv2/test/YouTube-real.txt"
+        ],
+        # "DFDC": [
+        #     "config/datasets/DFDC/test/fake.txt",
+        #     "config/datasets/DFDC/test/real.txt",
+        # ],
+        # "FFTW": [
+        #     "config/datasets/FF/test/DF.txt",
+        #     "config/datasets/FF/test/F2F.txt",
+        #     "config/datasets/FF/test/FS.txt",
+        #     "config/datasets/FF/test/NT.txt",
+        #     "config/datasets/FF/test/real.txt",
+        # ],
+        # "DSv1": [
+        #     "config/datasets/FF/test/DF.txt",
+        #     "config/datasets/FF/test/F2F.txt",
+        #     "config/datasets/FF/test/FS.txt",
+        #     "config/datasets/FF/test/NT.txt",
+        #     "config/datasets/FF/test/real.txt",
+        # ]
     }
+
+    # config.cluster_labels_path = "cluster_labels.npz"
 
     return config
 
@@ -149,7 +209,8 @@ def get_test_config() -> Config:
 
     config.run_name = new_run_name
     config.run_dir = "runs/test"
-    config.checkpoint = config_path.replace("hparams.yaml", "checkpoints/best_mAP.ckpt")
+    # config.checkpoint = config_path.replace("hparams.yaml", "checkpoints/best_mAP.ckpt")
+    config.checkpoint = "weights/model.ckpt"
     config.wandb = False
     config.wandb_tags.extend(["test"])
 
@@ -158,11 +219,27 @@ def get_test_config() -> Config:
     config.devices = [0]
 
     config.tst_files = {
+        # "CDF": [
+        #     "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+        #     "config/datasets/CDFv2/test/Celeb-real.txt",
+        #     "config/datasets/CDFv2/test/YouTube-real.txt",
+        # ]
+        # "DFD": [
+        #     "config/datasets/FF/test/DF.txt",
+        #     "config/datasets/FF/test/F2F.txt",
+        #     "config/datasets/FF/test/FS.txt",
+        #     "config/datasets/FF/test/NT.txt",
+        #     "config/datasets/FF/test/real.txt",
+        # ],
         "CDF": [
-            "config/datasets/CDFv2/test/Celeb-synthesis.txt",
             "config/datasets/CDFv2/test/Celeb-real.txt",
-            "config/datasets/CDFv2/test/YouTube-real.txt",
-        ]
+            "config/datasets/CDFv2/test/Celeb-synthesis.txt",
+            "config/datasets/CDFv2/test/YouTube-real.txt"
+        ],
+        "DFDC": [
+            "config/datasets/DFDC/test/fake.txt",
+            "config/datasets/DFDC/test/real.txt",
+        ],
     }
 
     return config

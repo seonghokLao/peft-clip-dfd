@@ -145,6 +145,9 @@ class DeepfakeDetectionModel(pl.LightningModule):
         if verbose:
             self.print_trainable_parameters()
 
+        cluster_data = np.load("cluster_labels.npy")
+        self.cluster_labels_map = dict(zip(cluster_data["paths"], cluster_data["cluster_labels"]))
+
     def _init_metrics(self):
         self.train_step_outputs = OutputsForMetrics()
         self.val_step_outputs = OutputsForMetrics()
@@ -268,7 +271,12 @@ class DeepfakeDetectionModel(pl.LightningModule):
         return outputs.logits_labels.softmax(1)
 
     def get_batch(self, batch: dict) -> Batch:
-        return Batch.from_dict(batch)
+        b = Batch.from_dict(batch)
+        new_labels = []
+        for p in b.paths:
+            new_labels.append(self.cluster_labels_map[p])
+        b.labels = torch.tensor(new_labels, device=b.labels.device, dtype=b.labels.dtype)
+        return b
 
     def slerp_feature_augmentation(self, batch: Batch, features: torch.Tensor):
         # Perform slerp on features, each class independently, vectorized

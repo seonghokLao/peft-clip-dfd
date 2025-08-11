@@ -10,3 +10,5 @@ __pycache__
 x.py
 y.py
 z.py
+*.npz
+*.npy

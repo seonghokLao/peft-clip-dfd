@@ -66,14 +66,13 @@ class DeepfakeDataset(BaseDataset):
         for file_with_paths in set(files_with_paths):
             with open(file_with_paths, "r") as f:
                 paths = f.readlines()
-                paths, labels = [path.strip().split(" ")[0] for path in paths], [int(path.strip().split(" ")[1]) for path in paths]
+                paths = [path.strip() for path in paths]
 
                 # If files do not exist, append root of 'file' to each path
                 root = file_with_paths.rsplit("/", 1)[0]
 
                 def process_path(root, path):
                     if not os.path.exists(path):
-                        print(path)
                         path = f"{root}/{path}"
                     assert os.path.exists(path), f"File not found: {path}"
                     return path
