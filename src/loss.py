@@ -41,6 +41,8 @@ class Loss(nn.Module):
         inputs: LossInputs,
     ) -> LossOutputs:
         loss_outputs = LossOutputs()
+        print("labels", inputs.labels.unique())
+        # print("fake target", target)
 
         if inputs.logits_labels is not None:
             if self.config.ce_labels:
@@ -70,25 +72,8 @@ class Loss(nn.Module):
                     loss_outputs.alignment_labels = L.item()
                     loss_outputs.total += L
                 
-                # Default: use binary labels (0=real, 1=fake)
-                supcon_labels = inputs.labels
-
-                with torch.no_grad():
-                    feats = embeddings  # already L2-normalized above
-                    fake_mask = supcon_labels == 1
-                    if fake_mask.any():
-                        centers = F.normalize(self.cluster_centers.to(feats.device), p=2, dim=1)
-                        fake_feats = feats[fake_mask]                       # (Nf, D)
-                        dists = torch.cdist(fake_feats, centers)            # (Nf, K)
-                        nearest = dists.argmin(dim=1) + 1                   # 1..K
-                        supcon_labels = supcon_labels.clone()
-                        supcon_labels[fake_mask] = nearest
-
-
-                Lc = self.supcon_loss(embeddings, supcon_labels,
-                                        temperature=getattr(self.config, "supcon_temperature", 0.07))
-                loss_outputs.total += Lc
-
+                Lp = self.prototype_contrastive_loss(embeddings, inputs.labels)
+                loss_outputs.total += Lp
 
             if self.config.uniformity:
                 L = self.config.uniformity * uniformity(embeddings)
@@ -107,42 +92,26 @@ class Loss(nn.Module):
     def __call__(self, inputs: LossInputs) -> LossOutputs:
         return super().__call__(inputs)
 
-    def supcon_loss(features, labels, temperature=0.07):
-        """
-        Supervised Contrastive Loss
-        features: [batch, dim] (should already be normalized)
-        labels: [batch] (cluster labels or normal labels)
-        """
-        device = features.device
-        labels = labels.contiguous().view(-1, 1)
-        mask = torch.eq(labels, labels.T).float().to(device)
+    def prototype_contrastive_loss(self, embeddings, labels, temperature=0.07):
+        embeddings = F.normalize(embeddings, p=2, dim=1)
+        centers = F.normalize(self.cluster_centers.to(embeddings.device), p=2, dim=1)  # [K, D]
 
 
-        anchor_dot_contrast = torch.div(
-            torch.matmul(features, features.T),
-            temperature
-        )
+        # Only keep fake samples (label > 0)
+        fake_mask = labels > 0
+        if not fake_mask.any():
+            print("[yellow]No fake samples found, skipping prototype contrastive loss")
+            return torch.tensor(0.0, device=embeddings.device)
 
 
-        # For numerical stability
-        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
-        logits = anchor_dot_contrast - logits_max.detach()
+        emb = embeddings[fake_mask]
+        # Remap 1..K → 0..K-1
+        target = labels[fake_mask] - 1
 
 
-        # Mask-out self-contrast cases
-        logits_mask = torch.ones_like(mask) - torch.eye(mask.shape[0]).to(device)
-        mask = mask * logits_mask
+        assert target.min() >= 0 and target.max() < centers.shape[0], \
+            f"Target out of range: min={target.min()}, max={target.max()}, num_prototypes={centers.shape[0]}"
 
 
-        # Compute log_prob
-        exp_logits = torch.exp(logits) * logits_mask
-        log_prob = logits - torch.log(exp_logits.sum(1, keepdim=True))
-
-
-        # Mean log-likelihood for positive pairs
-        mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
-
-
-        # Loss
-        loss = -mean_log_prob_pos.mean()
-        return loss
+        logits = torch.matmul(emb, centers.T) / temperature  # [N_fake, K]
+        return F.cross_entropy(logits, target)
